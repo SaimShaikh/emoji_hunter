@@ -158,6 +158,7 @@ export default function App() {
   const [targetIndex, setTargetIndex] = useState(-1);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [feedback, setFeedback] = useState('');
+  const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
 
   // Refs
   const canvasRef = useRef(null);
@@ -224,6 +225,7 @@ export default function App() {
     setTimeLeft(TIME_LIMIT);
     setGameState('playing');
     setFeedback('');
+    setShowCorrectAnswer(false);
   }, []);
 
   // Handle emoji click
@@ -265,9 +267,10 @@ export default function App() {
   const handleFailure = useCallback(() => {
     setGameState('fail');
     setPoints(0);
-    setFeedback('Oops — you lost your points. Try again?');
+    setFeedback(`Oops — you lost your points. The ${currentTarget} was here:`);
+    setShowCorrectAnswer(true);
     playSound(200, 0.5);
-  }, []);
+  }, [currentTarget]);
 
   // Handle time up
   const handleTimeUp = useCallback(() => {
@@ -469,6 +472,7 @@ export default function App() {
                       ${selectedIndex === index ? 'ring-2 ring-violet-400' : ''}
                       ${index === targetIndex && gameState === 'success' ? 'bg-green-500/50 ring-2 ring-green-400 animate-pulse' : ''}
                       ${selectedIndex === index && gameState === 'fail' && index !== targetIndex ? 'bg-red-500/50 ring-2 ring-red-400 animate-pulse' : ''}
+                      ${index === targetIndex && gameState === 'fail' && showCorrectAnswer ? 'bg-yellow-500/50 ring-2 ring-yellow-400 animate-pulse' : ''}
                     `}
                     aria-label={`Emoji ${emoji}, position ${index + 1}`}
                     style={{
