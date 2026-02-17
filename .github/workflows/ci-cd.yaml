@@ -8,7 +8,6 @@ on:
 
 jobs:
   clone:
-    name: Clone Repository
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
@@ -16,74 +15,63 @@ jobs:
           fetch-depth: 0
 
   build_test_scan:
-    name: Build, Test & Sonar Scan
     runs-on: self-hosted
     needs: clone
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test || echo "No tests found"
+      - run: npm ci
+      - run: npm test || echo "No tests found"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=SaimShaikh_emoji_hunter
+            -Dsonar.organization=saimshaikh
+            -Dsonar.sources=src
 
   docker_build_scan_push:
-    name: Build, Trivy Scan & Push Docker Image
     runs-on: self-hosted
     needs: build_test_scan
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Docker Hub Login
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 🔧 FIX 1: Build image WITH Docker Hub tag
-      - name: Build Docker Image
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest .
+      - name: Build image
+        run: docker build -t emoji_hunter:latest .
 
-      # 🔧 FIX 2: Trivy scans THE SAME image
-      - name: Trivy Scan (Docker Image)
-        uses: aquasecurity/trivy-action@master
+      - name: Tag image
+        run: docker tag emoji_hunter:latest ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
+
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
           severity: HIGH,CRITICAL
           exit-code: 1
-          format: table
 
-      - name: Push Docker Image
+      - name: Push image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
 
   deploy:
-    name: Deploy on EC2
     runs-on: self-hosted
     needs: docker_build_scan_push
-
     steps:
-      - name: Stop old container
-        run: |
-          docker stop emoji_hunter || true
-          docker rm emoji_hunter || true
-
-      - name: Run new container
-        run: |
+      - run: docker stop emoji_hunter || true
+      - run: docker rm emoji_hunter || true
+      - run: |
           docker run -d \
             --name emoji_hunter \
             -p 80:5173 \
