@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -63,7 +63,7 @@ jobs:
         with:
           image-ref: emoji_hunter:latest
           severity: HIGH,CRITICAL
-          exit-code: 0   # 🔴 change to 1 when you want strict security
+          exit-code: 0     # change to 1 for strict blocking
           format: table
 
       - name: Tag Docker image
@@ -87,3 +87,11 @@ jobs:
             --name emoji_hunter \
             -p 80:5173 \
             ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
+
+      - name: Show Application URL
+        run: |
+          PUBLIC_IP=$(curl -s http://checkip.amazonaws.com)
+          echo "===================================="
+          echo "🚀 Application deployed successfully"
+          echo "👉 Access URL: http://$PUBLIC_IP"
+          echo "===================================="
