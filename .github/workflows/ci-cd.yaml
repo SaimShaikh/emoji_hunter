@@ -63,7 +63,7 @@ jobs:
           docker tag emoji_hunter:latest ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
 
       - name: Trivy Scan (Local Image)
-        uses: aquasecurity/trivy-action@v0.11.2
+        uses: aquasecurity/trivy-action@v0.11
         with:
           image-ref: emoji_hunter:latest
           severity: HIGH,CRITICAL
