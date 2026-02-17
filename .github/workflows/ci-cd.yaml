@@ -56,12 +56,15 @@ jobs:
         run: docker tag emoji_hunter:latest ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
 
       - name: Trivy Scan
-        uses: aquasecurity/trivy-action@0.65.0
+        uses: aquasecurity/trivy-action@v0.32.0  # ✅ Correct
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
-          severity: HIGH,CRITICAL
-          exit-code: 1
-          format: table
+           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
+           severity: HIGH,CRITICAL
+           exit-code: 1
+           format: table
+
+          
+
       - name: Push image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
 
