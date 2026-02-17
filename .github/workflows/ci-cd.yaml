@@ -61,7 +61,7 @@ jobs:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
           severity: HIGH,CRITICAL
           exit-code: 1
-
+          format: table
       - name: Push image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
 
