@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 0
 
   build_test_scan:
-    name: Build, Test & Scan
+    name: Build, Test & Sonar Scan
     runs-on: self-hosted
     needs: clone
 
@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -37,23 +37,13 @@ jobs:
       - name: Run tests
         run: npm test || echo "No tests found"
 
-      # SonarCloud Scan
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # Trivy Scan
-      - name: Trivy Scan Docker Image
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
-          severity: HIGH,CRITICAL
-          exit-code: 1
-          format: table
-
-  docker_build_push:
-    name: Build & Push Docker Image
+  docker_build_scan_push:
+    name: Build, Trivy Scan & Push Docker Image
     runs-on: self-hosted
     needs: build_test_scan
 
@@ -69,8 +59,16 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t emoji_hunter .
+          docker build -t emoji_hunter:latest .
           docker tag emoji_hunter:latest ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
+
+      - name: Trivy Scan (Local Image)
+        uses: aquasecurity/trivy-action@v0.11.2
+        with:
+          image-ref: emoji_hunter:latest
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          format: table
 
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/emoji_hunter:latest
@@ -78,7 +76,7 @@ jobs:
   deploy:
     name: Deploy on EC2
     runs-on: self-hosted
-    needs: docker_build_push
+    needs: docker_build_scan_push
 
     steps:
       - name: Stop old container
